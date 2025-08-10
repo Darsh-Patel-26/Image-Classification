@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import os
+import io
 from PIL import Image
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
@@ -24,7 +25,7 @@ st.markdown(
     """, unsafe_allow_html=True
 )
 
-st.write("Upload a JPG/PNG image. It will be resized to **32×32** and classified using a trained CNN model.")
+st.write("Upload a JPG/PNG image or choose a sample image from the CIFAR-10 test set.")
 
 # --- Model settings ---
 MODEL_PATH = os.path.join("cifar10_model", "cifar10.h5")
@@ -47,15 +48,46 @@ def preprocess_image(image: Image.Image) -> np.ndarray:
     arr = img_to_array(img) / 255.0
     return np.expand_dims(arr, axis=0)
 
-# --- File uploader ---
-uploaded_file = st.file_uploader("📤 Upload an image", type=["jpg", "jpeg", "png"])
+# --- Function to capture model summary ---
+def get_model_summary(model):
+    stream = io.StringIO()
+    model.summary(print_fn=lambda x: stream.write(x + "\n"))
+    return stream.getvalue()
+
+# ===== Sidebar =====
+st.sidebar.header("📂 Image Input")
+
+# Option to upload or choose demo
+input_choice = st.sidebar.radio("Choose input type:", ["Upload Your Image", "Use Demo Image"])
+
+uploaded_file = None
+demo_image = None
+
+if input_choice == "Upload Your Image":
+    uploaded_file = st.sidebar.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+
+elif input_choice == "Use Demo Image":
+    test_folder = "Test"
+    available_classes = [f for f in CLASS_NAMES if os.path.exists(os.path.join(test_folder, f"{f}.jpeg"))]
+    selected_class = st.sidebar.selectbox("Select a class", available_classes)
+    if selected_class:
+        demo_image_path = os.path.join(test_folder, f"{selected_class}.jpeg")
+        if os.path.exists(demo_image_path):
+            demo_image = Image.open(demo_image_path)
+
+# ===== Main Logic =====
+image_to_classify = None
 
 if uploaded_file:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="📷 Uploaded Image", use_container_width=True)
+    image_to_classify = Image.open(uploaded_file)
+elif demo_image:
+    image_to_classify = demo_image
+
+if image_to_classify:
+    st.image(image_to_classify, caption="🖼 Selected Image", use_container_width=True)
 
     with st.spinner("🔍 Classifying... Please wait"):
-        x = preprocess_image(image)
+        x = preprocess_image(image_to_classify)
         preds = model.predict(x)
         pred_idx = int(np.argmax(preds, axis=-1)[0])
         confidence = float(np.max(preds, axis=-1)[0])
@@ -79,6 +111,19 @@ if uploaded_file:
     order = np.argsort(-probs)
     for idx in order:
         st.write(f"**{CLASS_NAMES[idx]}**: {probs[idx]:.4f}")
+
+with st.expander("🛠 Model Summary"):
+    summary_str = get_model_summary(model)
+    st.markdown(
+        f"""
+        <div style="background-color:#1e1e1e; color:#d4d4d4; padding:15px; 
+                    border-radius:8px; overflow-x:auto; font-family:monospace;">
+        {summary_str.replace('\n', '<br>')}
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+
 
 st.markdown("---")
 st.caption("💡 Tip: Match preprocessing to your training setup for accurate results.")
