@@ -97,7 +97,7 @@ if image_to_classify:
         f"""
         <div style="background-color:#e8f5e9; padding:15px; border-radius:8px; text-align:center;">
             <h3 style="color:#2e7d32;">Prediction: {CLASS_NAMES[pred_idx]}</h3>
-            <p style="font-size:18px;">Confidence: <b>{confidence:.2%}</b></p>
+            <p style="font-size:18px; color:red">Confidence: <b>{confidence:.2%}</b></p>
         </div>
         """, unsafe_allow_html=True
     )
