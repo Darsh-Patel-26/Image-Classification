@@ -36,8 +36,20 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-  
-  
+<h2>🛠️ Installation Steps for Docker:</h2>
+
+<p>1. Pull Image:</p>
+
+```
+docker pull darshpatel261004/image-classification-cifar10:1.0
+```
+
+<p>2. Visit the Port 8501</p>
+
+```
+http://localhost:8501/
+```
+
 <h2>💻 Built with</h2>
 
 Technologies used in the project:
