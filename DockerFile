@@ -2,10 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# Copy only requirements first for better caching
+COPY requirements.txt .
+
+# Install deps
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the app
 COPY . .
 
-RUN pip install --no-cache-dir -r requirments.txt
-
 EXPOSE 8501
+
+# Streamlit entry
 ENTRYPOINT ["streamlit", "run"]
 CMD ["app.py", "--server.address=0.0.0.0", "--server.port=8501"]
